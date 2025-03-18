@@ -52,7 +52,7 @@ for (y in years) {
     filter(CRITERIO %in% c("1", "2")) |>
     select(-CRITERIO) |>
     # Pre-process data
-    process_sinan_chikungunya() |>
+    process_sinan_leishmaniose_tegumentar() |>
     # Select and rename fields
     select(
       geocodmu = ID_MN_RESI,

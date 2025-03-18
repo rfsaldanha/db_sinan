@@ -16,13 +16,13 @@ conn <- recbilis:::db_connect()
 load(file = "mun_reg_saude_449.rda")
 
 # Definitions
-years <- 2010:2023
+years <- 2010:2024
 schema_name <- "records"
-table_name <- "chagas"
-health_name <- "chagas"
+table_name <- "leish_vis"
+health_name <- "leish_vis"
 source_name <- "SINAN"
 
-# Chagas
+# Leishmaniose visceral
 
 ## Database cleaning
 if (dbExistsTable(conn, Id(schema = schema_name, table = table_name))) {
@@ -38,25 +38,25 @@ for (y in years) {
   tmp <- fetch_datasus(
     year_start = y,
     year_end = y,
-    information_system = "SINAN-CHAGAS"
+    information_system = "SINAN-LEISHMANIOSE-VISCERAL"
   ) |>
     # Select fields
     select(
       ID_MN_RESI,
-      DT_SIN_PRI,
+      DT_INVEST,
       CS_SEXO,
       NU_IDADE_N,
-      CLASSI_FIN
+      CRITERIO
     ) |>
     # Filter positive classifications
-    filter(!(CLASSI_FIN %in% c("5", "8"))) |>
-    select(-CLASSI_FIN) |>
+    filter(CRITERIO %in% c("1", "2")) |>
+    select(-CRITERIO) |>
     # Pre-process data
-    process_sinan_chagas() |>
+    process_sinan_leishmaniose_visceral() |>
     # Select and rename fields
     select(
       geocodmu = ID_MN_RESI,
-      date = DT_SIN_PRI,
+      date = DT_INVEST,
       sex = CS_SEXO,
       age = IDADEanos
     ) |>
