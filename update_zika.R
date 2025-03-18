@@ -16,13 +16,17 @@ conn <- recbilis:::db_connect()
 load(file = "mun_reg_saude_449.rda")
 
 # Definitions
-years <- 2010:2024
+years <- 2016:2024
+schema_name <- "records"
+table_name <- "zika"
+health_name <- "zika"
+source_name <- "SINAN"
 
-# Dengue
+# Zika
 
 ## Database cleaning
-if (dbExistsTable(conn, Id(schema = "records", table = "dengue"))) {
-  dbRemoveTable(conn, Id(schema = "records", table = "dengue"))
+if (dbExistsTable(conn, Id(schema = schema_name, table = table_name))) {
+  dbRemoveTable(conn, Id(schema = schema_name, table = table_name))
 }
 
 ## Download
@@ -34,11 +38,21 @@ for (y in years) {
   tmp <- fetch_datasus(
     year_start = y,
     year_end = y,
-    information_system = "SINAN-DENGUE",
-    timeout = 10000
+    information_system = "SINAN-ZIKA"
   ) |>
+    # Select fields
+    select(
+      ID_MN_RESI,
+      DT_SIN_PRI,
+      CS_SEXO,
+      NU_IDADE_N,
+      CLASSI_FIN
+    ) |>
+    # Filter positive classifications
+    filter(!(CLASSI_FIN %in% c("2", "8"))) |>
+    select(-CLASSI_FIN) |>
     # Pre-process data
-    process_sinan_dengue() |>
+    process_sinan_zika() |>
     # Select and rename fields
     select(
       geocodmu = ID_MN_RESI,
@@ -54,8 +68,8 @@ for (y in years) {
       year = as.integer(year(date)),
       month = as.integer(month(date)),
       epiweek = as.integer(epiweek(date)),
-      health = "Dengue",
-      source = "SINAN",
+      health = health_name,
+      source = source_name,
       age = as.integer(age)
     ) |>
     # Update fields
@@ -96,7 +110,7 @@ for (y in years) {
   message("Writing to database...")
   dbWriteTable(
     conn = conn,
-    name = Id(schema = "records", table = "dengue"),
+    name = Id(schema = schema_name, table = table_name),
     value = tmp,
     append = TRUE
   )
@@ -106,4 +120,7 @@ for (y in years) {
 
   message("Done!")
   message(Sys.time())
+  message("---")
 }
+
+dbDisconnect(conn)
